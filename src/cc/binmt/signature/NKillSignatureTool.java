@@ -20,8 +20,11 @@ import org.jf.smali.SmaliOptions;
 import sun.security.pkcs.PKCS7;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
 import java.util.*;
+
+import static java.nio.charset.StandardCharsets.*;
 
 public class NKillSignatureTool {
     private static boolean customApplication = false;
@@ -96,14 +99,14 @@ public class NKillSignatureTool {
                 temp.renameTo(outApk);
             }
 
-            System.out.println("\Done!");
+            System.out.println("Done!");
         }
     }
 
     private static byte[] processDex(DexBackedDexFile dex) throws Exception {
         DexBuilder dexBuilder = new DexBuilder(Opcodes.getDefault());
         try (InputStream fis = NKillSignatureTool.class.getResourceAsStream("PmsHookApplication.smali")) {
-            String src = new String(StreamUtil.readBytes(fis), "utf-8");
+            String src = new String(StreamUtil.readBytes(fis), UTF_8);
             if (customApplication) {
                 if (customApplicationName.startsWith(".")) {
                     if (packageName == null)
