@@ -30,33 +30,33 @@ public class NKillSignatureTool {
     private static byte[] signatures;
 
     public static void main(String[] args) throws Exception {
-        process();
+        if (args.length<3) {
+            System.out.println("Usage: NKillSignatureTool <file.apk> <outfile.apk>");
+        } else {
+            process(args[1],args[2]);
+        }
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    private static void process() throws Exception {
-        Properties properties = new Properties();
-        try (FileInputStream fis = new FileInputStream("config.txt")) {
-            properties.load(fis);
-        }
-        File srcApk = new File(properties.getProperty("apk.src"));
-        File signApk = new File(properties.getProperty("apk.signed"));
-        File outApk = new File(properties.getProperty("apk.out"));
-        boolean signEnable = properties.getProperty("sign.enable").equalsIgnoreCase("true");
-        String signFile = properties.getProperty("sign.file");
-        String signPassword = properties.getProperty("sign.password");
-        String signAlias = properties.getProperty("sign.alias");
-        String signAliasPassword = properties.getProperty("sign.aliasPassword");
+    private static void process(String arg1,String arg2) throws Exception {
+        File srcApk = new File(arg1);
+        File signApk = new File(arg1);
+        File outApk = new File(arg2);
+        boolean signEnable = false;
+        String signFile = "test.keystore";
+        String signPassword = "123456";
+        String signAlias = "user";
+        String signAliasPassword = "654321";
 
-        System.out.println("正在读取签名：" + signApk.getPath());
+        System.out.println("Loading signature：" + signApk.getPath());
         signatures = getApkSignatureData(signApk);
         byte[] manifestData;
         byte[] dexData;
 
-        System.out.println("\n正在读取APK：" + srcApk.getPath());
+        System.out.println("\nLoading APK：" + srcApk.getPath());
 
         try (ZipFile zipFile = new ZipFile(srcApk)) {
-            System.out.println("  --正在处理AndroidManifest.xml");
+            System.out.println("  --Processing AndroidManifest.xml");
             ZipEntry manifestEntry = zipFile.getEntry("AndroidManifest.xml");
             manifestData = parseManifest(zipFile.getInputStream(manifestEntry));
 
@@ -64,10 +64,10 @@ public class NKillSignatureTool {
             DexBackedDexFile dex = DexBackedDexFile.fromInputStream(Opcodes.getDefault(),
                     new BufferedInputStream(zipFile.getInputStream(dexEntry)));
 
-            System.out.println("  --正在处理classes.dex");
+            System.out.println("  --Processing classes.dex");
             dexData = processDex(dex);
 
-            System.out.println("\n正在写出APK：" + outApk.getPath());
+            System.out.println("\nGenerating APK：" + outApk.getPath());
             try (ZipOutputStream zos = new ZipOutputStream(outApk)) {
                 zos.putNextEntry("AndroidManifest.xml");
                 zos.write(manifestData);
@@ -88,7 +88,7 @@ public class NKillSignatureTool {
                 }
             }
             if (signEnable) {
-                System.out.println("\n正在签名APK：" + outApk.getPath());
+                System.out.println("\nSigning APK：" + outApk.getPath());
                 KeystoreKey keystoreKey = new KeystoreKey(signFile, signPassword, signAlias, signAliasPassword);
                 File temp = new File(outApk.getPath() + ".tmp");
                 ApkSigner.signApk(outApk, temp, keystoreKey,null);
@@ -96,7 +96,7 @@ public class NKillSignatureTool {
                 temp.renameTo(outApk);
             }
 
-            System.out.println("\n处理完成");
+            System.out.println("\Done!");
         }
     }
 
